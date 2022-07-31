@@ -1,0 +1,71 @@
+name: Create release of SMT
+
+on:
+    push:
+        tags: ['v*']
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Set up JDK 11
+              uses: actions/setup-java@v3
+              with:
+                  distribution: 'adopt'
+                  java-version: 11
+            -   name: Publish package
+                run: sbt test publish
+                env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Set up JDK 11
+              uses: actions/setup-java@v3
+              with:
+                  distribution: 'adopt'
+                  java-version: 11
+            - name: Test code
+              run: sbt test
+            - name: Assembly package
+              run: sbt assembly
+            - name: Pack package - sbt
+              run: sbt pack
+            - name: Pack package - create zip
+              run: |
+                mkdir -p target/kafka-connect-transform-record2row/doc
+                rm -rf target/kafka-connect-transform-record2row/bin
+                cp LICENSE target/kafka-connect-transform-record2row/doc/
+                cp manifest.json target/kafka-connect-transform-record2row/
+                cd target
+                zip -r kafka-connect-transform-record2row{.zip,}
+            - name: Create Release
+              uses: actions/create-release@latest
+              id: create_release
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+              with:
+                  tag_name: ${{ github.ref }}
+                  release_name: Release ${{ github.ref }}
+                  draft: false
+                  prerelease: false
+            - name: Upload assembly jar
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: 'target/kafka-connect-transform-record2row-assembly.jar'
+                  asset_name: 'kafka-connect-transform-record2row-assembly.jar'
+                  asset_content_type: application/java-archive
+            - name: Upload plugin zip
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: target/kafka-connect-transform-record2row.zip
+                  asset_name: kafka-connect-transform-record2row.zip
+                  asset_content_type: application/zip
