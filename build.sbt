@@ -12,18 +12,20 @@ lazy val root = (project in file("."))
 resolvers += "confluent" at "https://packages.confluent.io/maven/"
 
 libraryDependencies ++= Seq(
-  "org.apache.kafka" % "kafka-clients" % "7.2.1-ccs",
-  "org.apache.kafka" % "connect-api" % "3.2.1",
   "org.apache.kafka" % "connect-transforms" % "3.2.1",
   "org.slf4j" % "slf4j-api" % "1.7.36",
   "at.grahsl.kafka.connect" % "kafka-connect-mongodb" % "1.4.0",
-  "org.mongodb" % "mongodb-driver" % "3.12.11",
   "org.mongodb" % "bson" % "4.6.0",
-  "io.confluent" % "kafka-avro-serializer" % "7.2.1",
-  "io.confluent" % "kafka-connect-maven-plugin" % "0.12.0",
-  "ch.qos.logback" % "logback-core" % "1.2.11",
-  "ch.qos.logback" % "logback-classic" % "1.2.11",
   "org.scalatest" %% "scalatest" % "3.2.12" % Test,
+)
+excludeDependencies ++= Seq(
+  ExclusionRule("ch.qos.logback", "logback-classic"),
+  ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),
+  ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
+  ExclusionRule("io.confluent", "kafka-avro-serializer"),
+  ExclusionRule("io.confluent", "kafka-connect-maven-plugin"),
+  ExclusionRule("org.apache.commons", "commons-lang3"),
+  ExclusionRule("org.mongodb", "mongodb-driver"),
 )
 
 // assembly plugin parameters - for uber JAR
