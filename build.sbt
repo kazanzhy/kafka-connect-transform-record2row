@@ -15,9 +15,7 @@ libraryDependencies ++= Seq(
   "org.apache.kafka" % "kafka-clients" % "5.3.2-ccs",
   "org.apache.kafka" % "connect-api" % "3.1.0",
   "org.apache.kafka" % "connect-transforms" % "3.1.0",
-  "org.apache.logging.log4j" % "log4j-core" % "2.18.0",
-  "org.apache.logging.log4j" % "log4j-api" % "2.18.0",
-  "org.apache.logging.log4j" %% "log4j-api-scala" % "12.0",
+  "org.slf4j" % "slf4j-api" % "1.7.36",
   "at.grahsl.kafka.connect" % "kafka-connect-mongodb" % "1.4.0",
   "org.scalatest" %% "scalatest" % "3.2.12" % Test,
 )

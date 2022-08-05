@@ -7,12 +7,13 @@ import org.apache.kafka.connect.connector.ConnectRecord
 import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
 import org.apache.kafka.connect.transforms.Transformation
 import org.apache.kafka.connect.transforms.util.{SimpleConfig, Requirements}
-import org.apache.logging.log4j.scala.Logging
 import org.bson.json.{JsonMode, JsonWriterSettings}
 import at.grahsl.kafka.connect.mongodb.converter.AvroJsonSchemafulRecordConverter
+import org.slf4j.{LoggerFactory, Logger}
 
+object Record2RowConverter {
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-object Record2RowConverter extends Logging {
   final val OVERVIEW_DOC = "Converts a not primitive fields into a JSON string fields."
   private val PURPOSE = "Converting record with Schema into a record with a new schema."
 
@@ -43,7 +44,7 @@ object Record2RowConverter extends Logging {
 }
 
 
-sealed abstract class Record2RowConverter[R <: ConnectRecord[R]] extends Transformation[R] with Logging {
+sealed abstract class Record2RowConverter[R <: ConnectRecord[R]] extends Transformation[R] {
   private var converter: AvroJsonSchemafulRecordConverter = null
   private var jsonWriterSettings: JsonWriterSettings = null
   private var jsonStringFieldName: String = null
