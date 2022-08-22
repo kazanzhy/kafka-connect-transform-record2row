@@ -12,10 +12,9 @@ lazy val root = (project in file("."))
 resolvers += "confluent" at "https://packages.confluent.io/maven/"
 
 libraryDependencies ++= Seq(
-  "org.apache.kafka" % "connect-transforms" % "3.2.1",
+  "org.apache.kafka" % "connect-transforms" % "3.2.1" % Provided,
   "org.slf4j" % "slf4j-api" % "1.7.36",
-  "at.grahsl.kafka.connect" % "kafka-connect-mongodb" % "1.4.0",
-  "org.mongodb" % "bson" % "4.6.0",
+  "org.sharegov" % "mjson" % "1.4.1",
   "org.scalatest" %% "scalatest" % "3.2.12" % Test,
 )
 excludeDependencies ++= Seq(
@@ -25,7 +24,7 @@ excludeDependencies ++= Seq(
   ExclusionRule("io.confluent", "kafka-avro-serializer"),
   ExclusionRule("io.confluent", "kafka-connect-maven-plugin"),
   ExclusionRule("org.apache.commons", "commons-lang3"),
-  ExclusionRule("org.mongodb", "mongodb-driver"),
+  ExclusionRule("junit", "junit")
 )
 
 // assembly plugin parameters - for uber JAR

@@ -1,15 +1,14 @@
 package com.github.kazanzhy.kafka.connect.smt
 
-import scala.jdk.CollectionConverters._
-import java.util
 import org.apache.kafka.common.config.ConfigDef
 import org.apache.kafka.connect.connector.ConnectRecord
 import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
 import org.apache.kafka.connect.transforms.Transformation
-import org.apache.kafka.connect.transforms.util.{SimpleConfig, Requirements}
-import org.bson.json.{JsonMode, JsonWriterSettings}
-import at.grahsl.kafka.connect.mongodb.converter.AvroJsonSchemafulRecordConverter
-import org.slf4j.{LoggerFactory, Logger}
+import org.apache.kafka.connect.transforms.util.{Requirements, SimpleConfig}
+import org.slf4j.{Logger, LoggerFactory}
+
+import java.util
+import scala.jdk.CollectionConverters._
 
 object Record2RowConverter {
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
@@ -18,21 +17,11 @@ object Record2RowConverter {
   private val PURPOSE = "Converting record with Schema into a record with a new schema."
 
   private object ConfigName {
-    val JSON_STRING_FIELD_NAME = "json.string.field.name"
-    val JSON_WRITER_OUTPUT_MODE = "json.writer.output.mode"
     val INCLUDE_FIELD_NAMES = "include.field.names"
     val EXCLUDE_FIELD_NAMES = "exclude.field.names"
   }
 
   val CONFIG_DEF: ConfigDef = new ConfigDef()
-      .define(
-        ConfigName.JSON_WRITER_OUTPUT_MODE,
-        ConfigDef.Type.STRING, "RELAXED",
-        ConfigDef.Importance.MEDIUM, "Output mode of JSON Writer (RELAXED, EXTENDED, SHELL)")
-      .define(
-        ConfigName.JSON_STRING_FIELD_NAME,
-        ConfigDef.Type.STRING, "",
-        ConfigDef.Importance.HIGH, "Field name for output JSON String field")
       .define(
         ConfigName.INCLUDE_FIELD_NAMES,
         ConfigDef.Type.STRING, "",
@@ -45,9 +34,6 @@ object Record2RowConverter {
 
 
 sealed abstract class Record2RowConverter[R <: ConnectRecord[R]] extends Transformation[R] {
-  private var converter: AvroJsonSchemafulRecordConverter = null
-  private var jsonWriterSettings: JsonWriterSettings = null
-  private var jsonStringFieldName: String = null
   private var includeFieldNames: String = null
   private var excludeFieldNames: String = null
 
@@ -59,19 +45,8 @@ sealed abstract class Record2RowConverter[R <: ConnectRecord[R]] extends Transfo
     Record2RowConverter.CONFIG_DEF
   }
 
-  private def toJsonMode(jsonMode: String) = jsonMode match {
-    case "SHELL" => JsonMode.SHELL
-    case "EXTENDED" => JsonMode.EXTENDED
-    case _ => JsonMode.RELAXED
-  }
-
   def configure(props: util.Map[String, _]): Unit = {
     val conf: SimpleConfig = new SimpleConfig(Record2RowConverter.CONFIG_DEF, props)
-    converter = new AvroJsonSchemafulRecordConverter()
-    jsonWriterSettings = JsonWriterSettings.builder
-        .outputMode(toJsonMode(conf.getString(Record2RowConverter.ConfigName.JSON_WRITER_OUTPUT_MODE)))
-        .build
-    jsonStringFieldName = conf.getString(Record2RowConverter.ConfigName.JSON_STRING_FIELD_NAME)
     includeFieldNames = conf.getString(Record2RowConverter.ConfigName.INCLUDE_FIELD_NAMES)
     excludeFieldNames = conf.getString(Record2RowConverter.ConfigName.EXCLUDE_FIELD_NAMES)
   }
@@ -99,13 +74,7 @@ sealed abstract class Record2RowConverter[R <: ConnectRecord[R]] extends Transfo
     val outputValue = new Struct(outputSchema)
     for (field <- inputSchema.fields.asScala){
       if (fieldsToConvert.contains(field.name)) {
-        val newFieldName = if (jsonStringFieldName == "") field.name else jsonStringFieldName
-        val newFieldSchema = SchemaBuilder.struct.field(newFieldName, field.schema).build()
-        val newFieldValue = new Struct(newFieldSchema)
-        newFieldValue.put(newFieldName, inputValue.get(field.name))
-        val bsonDoc = converter.convert(newFieldSchema, newFieldValue)
-        val jsonDoc = bsonDoc.toJson(jsonWriterSettings)
-        outputValue.put(field.name, jsonDoc)
+        outputValue.put(field.name, Connect2JsonConverter.convert(inputValue.get(field), field.schema).toString())
       } else {
         outputValue.put(field.name, inputValue.get(field.name))
       }
@@ -133,9 +102,7 @@ sealed abstract class Record2RowConverter[R <: ConnectRecord[R]] extends Transfo
     }
   }
 
-  def close(): Unit = {
-    converter = null
-  }
+  def close(): Unit = ()
 }
 
 final class RecordKey2RowConverter[R <: ConnectRecord[R]] extends Record2RowConverter[R] {

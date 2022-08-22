@@ -122,24 +122,6 @@ class RecordKey2RowConverterTest extends Record2RowConverterTest {
     assert(isAllStructFieldsString(transformedRecord.key.asInstanceOf[Struct]))
   }
 
-  test("Record Value: Writer Mode Parameter") {
-    val customConf = new util.HashMap[String, AnyRef]
-    customConf.put("json.writer.output.mode", "EXTENDED")
-    keySmt.configure(customConf)
-    val record = new SinkRecord(null, 0, complexesSchema, complexesStruct, Schema.STRING_SCHEMA, "test", 0)
-    val transformedRecord = keySmt.apply(record)
-    assert(transformedRecord.key.asInstanceOf[Struct].get("record").toString === "{\"record\": {\"name\": \"John\", \"age\": {\"$numberInt\": \"42\"}}}")
-  }
-
-  test("Record Key: Field Name Parameter") {
-    val customConf = new util.HashMap[String, AnyRef]
-    customConf.put("json.string.field.name", "myfieldname")
-    keySmt.configure(customConf)
-    val record = new SinkRecord(null, 0, complexesSchema, complexesStruct, Schema.STRING_SCHEMA, "test", 0)
-    val transformedRecord = keySmt.apply(record)
-    assert(isAllStringFieldsStartsWith(transformedRecord.key.asInstanceOf[Struct], "{\"myfieldname\": "))
-  }
-
   test("Record Key: Include Parameter") {
     val customConf = new util.HashMap[String, AnyRef]
     customConf.put("include.field.names", "boolean,int8,int16,int32,int64,float32,float64,bytes")
@@ -188,24 +170,6 @@ class RecordValue2RowConverterTest extends Record2RowConverterTest {
     assert(transformedRecord.valueSchema.fields.size === 3)
     assert(isStructSchemasEqual(transformedRecord.valueSchema, complexesStringSchema))
     assert(isAllStructFieldsString(transformedRecord.value.asInstanceOf[Struct]))
-  }
-
-  test("Record Value: Writer Mode Parameter") {
-    val customConf = new util.HashMap[String, AnyRef]
-    customConf.put("json.writer.output.mode", "EXTENDED")
-    valueSmt.configure(customConf)
-    val record = new SinkRecord(null, 0, Schema.STRING_SCHEMA, "test", complexesSchema, complexesStruct, 0)
-    val transformedRecord = valueSmt.apply(record)
-    assert(transformedRecord.value.asInstanceOf[Struct].get("record").toString === "{\"record\": {\"name\": \"John\", \"age\": {\"$numberInt\": \"42\"}}}")
-  }
-
-  test("Record Value: Field Name Parameter") {
-    val customConf = new util.HashMap[String, AnyRef]
-    customConf.put("json.string.field.name", "myfieldname")
-    valueSmt.configure(customConf)
-    val record = new SinkRecord(null, 0, Schema.STRING_SCHEMA, "test", complexesSchema, complexesStruct,  0)
-    val transformedRecord = valueSmt.apply(record)
-    assert(isAllStringFieldsStartsWith(transformedRecord.value.asInstanceOf[Struct], "{\"myfieldname\": "))
   }
 
   test("Record Value: Include Parameter") {
