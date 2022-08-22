@@ -5,7 +5,7 @@ to a new record which contains only primitive types.
 ## Use Cases
 The reason why this SMT was built is the known limitation of the JDBC Sink Connector to handle 
 struct, map and arrays that contains not primitive types, like maps or structs. 
-All these fields are converted into JSON String using ``bson`` from MongoDB.
+All these fields are converted into a JSON String.
 But for sure there are other use cases out there where this SMT might be helpful.
 Avro types matching with Postgres types using JDBC Sink Connector with or without SMT.
 
@@ -50,8 +50,7 @@ It was only tested with Avro Schemas backed by Confluent Schema Registry.
 {
   ////
   "transforms": "torow",
-  "transforms.torow.type": "com.github.kazanzhy.kafka.connect.smt.RecordValue2RowConverter",
-  "transforms.torow.json.writer.output.mode": "RELAXED", // Optional
+  "transforms.torow.type": "com.github.kazanzhy.kafka.connect.smt.RecordValue2RowConverter"
   ////
 }
 ```
@@ -60,8 +59,6 @@ It was only tested with Avro Schemas backed by Confluent Schema Registry.
 |          Name           |                         Description                          |  Type  |             Default             |                    Valid Values                     | Importance |
 |:-----------------------:|:------------------------------------------------------------:|:------:|:-------------------------------:|:---------------------------------------------------:|:----------:|
 |          type           |                  Class that is used for SMT                  | string |                                 | RecordValue2RowConverter<br/>RecordKey2RowConverter |    high    |
-| json.writer.output.mode |             Output mode of the BSON Json Writer              | string |             RELAXED             |              RELAXED, EXTENDED, SHELL               |    high    |
-| json.string.field.name  |               Name of the field in JSON String               | string |       original field name       |                  non-empty string                   |    high    |
 |   include.field.names   | Names of primitive fields to forcibly convert to JSON String | string |  Complex data type field names  |             comma-separates field names             |    high    |
 |   exclude.field.names   |      Names of complex fields to keep original data type      | string | Primitive data type field names |             comma-separates field names             |    high    |
 
