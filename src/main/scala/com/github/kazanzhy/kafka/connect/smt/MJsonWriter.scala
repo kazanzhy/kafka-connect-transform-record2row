@@ -8,7 +8,8 @@ import org.apache.kafka.connect.errors.DataException
 import java.math.{BigDecimal => JUBigDecimal}
 import java.nio.ByteBuffer
 import java.time.{Instant, ZoneOffset}
-import java.util.{Base64, Date => JUDate}
+import java.util
+import java.util.Base64
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.{ListHasAsScala, MapHasAsScala}
 
@@ -18,7 +19,7 @@ trait LogicalTypeConverter {
 
 class DateConverter(mapToString: Instant => String) extends LogicalTypeConverter {
   override def convert(factory: Json.Factory, value: Any, schema: Schema): Json =
-    factory.string(mapToString(Instant.ofEpochMilli(value.asInstanceOf[JUDate].getTime)))
+    factory.string(mapToString(Instant.ofEpochMilli(value.asInstanceOf[util.Date].getTime)))
 }
 
 object DecimalConverter extends LogicalTypeConverter {
@@ -26,7 +27,7 @@ object DecimalConverter extends LogicalTypeConverter {
     factory.number(value.asInstanceOf[JUBigDecimal])
 }
 
-object Connect2JsonConverter {
+class MJsonWriter extends JsonWriter {
   private val factory = Json.factory()
   private val base64 = Base64.getEncoder
   private val logicalTypeConverters = Map(
@@ -35,6 +36,10 @@ object Connect2JsonConverter {
     Timestamp.LOGICAL_NAME -> new DateConverter(_.toString),
     Decimal.LOGICAL_NAME -> DecimalConverter
   )
+
+  override def configure(props: util.Map[String, _]): Unit = ()
+
+  override def write(field: Field, value: Any): String = convert(value, field.schema).toString
 
   def convert(value: Any, schema: Schema): Json = {
     if (value == null) {

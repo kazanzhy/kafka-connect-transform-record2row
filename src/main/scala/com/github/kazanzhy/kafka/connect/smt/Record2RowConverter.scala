@@ -1,14 +1,20 @@
 package com.github.kazanzhy.kafka.connect.smt
 
-import org.apache.kafka.common.config.ConfigDef
+import org.apache.kafka.common.config.{ConfigDef, ConfigException}
 import org.apache.kafka.connect.connector.ConnectRecord
-import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
+import org.apache.kafka.connect.data.{Field, Schema, SchemaBuilder, Struct}
 import org.apache.kafka.connect.transforms.Transformation
 import org.apache.kafka.connect.transforms.util.{Requirements, SimpleConfig}
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.util
 import scala.jdk.CollectionConverters._
+
+trait JsonWriter {
+  def configure(props: util.Map[String, _]): Unit
+
+  def write(field: Field, value: Any): String
+}
 
 object Record2RowConverter {
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
@@ -17,11 +23,16 @@ object Record2RowConverter {
   private val PURPOSE = "Converting record with Schema into a record with a new schema."
 
   private object ConfigName {
+    val JSON_WRITER = "json.writer"
     val INCLUDE_FIELD_NAMES = "include.field.names"
     val EXCLUDE_FIELD_NAMES = "exclude.field.names"
   }
 
   val CONFIG_DEF: ConfigDef = new ConfigDef()
+      .define(
+        ConfigName.JSON_WRITER,
+        ConfigDef.Type.STRING, "bson",
+        ConfigDef.Importance.HIGH, "Writer to use for converting values to JSON (bson, mjson)")
       .define(
         ConfigName.INCLUDE_FIELD_NAMES,
         ConfigDef.Type.STRING, "",
@@ -34,6 +45,7 @@ object Record2RowConverter {
 
 
 sealed abstract class Record2RowConverter[R <: ConnectRecord[R]] extends Transformation[R] {
+  private var jsonWriter: JsonWriter = null
   private var includeFieldNames: String = null
   private var excludeFieldNames: String = null
 
@@ -47,6 +59,13 @@ sealed abstract class Record2RowConverter[R <: ConnectRecord[R]] extends Transfo
 
   def configure(props: util.Map[String, _]): Unit = {
     val conf: SimpleConfig = new SimpleConfig(Record2RowConverter.CONFIG_DEF, props)
+    val jsonWriterConfig = conf.getString(Record2RowConverter.ConfigName.JSON_WRITER).toLowerCase
+    jsonWriter = jsonWriterConfig match {
+      case "bson" => new BsonWriter
+      case "mjson" => new MJsonWriter
+      case _ => throw new ConfigException(s"Unknown JSON Writer '$jsonWriterConfig' configured")
+    }
+    jsonWriter.configure(props)
     includeFieldNames = conf.getString(Record2RowConverter.ConfigName.INCLUDE_FIELD_NAMES)
     excludeFieldNames = conf.getString(Record2RowConverter.ConfigName.EXCLUDE_FIELD_NAMES)
   }
@@ -74,7 +93,7 @@ sealed abstract class Record2RowConverter[R <: ConnectRecord[R]] extends Transfo
     val outputValue = new Struct(outputSchema)
     for (field <- inputSchema.fields.asScala){
       if (fieldsToConvert.contains(field.name)) {
-        outputValue.put(field.name, Connect2JsonConverter.convert(inputValue.get(field), field.schema).toString())
+        outputValue.put(field.name, jsonWriter.write(field, inputValue.get(field)))
       } else {
         outputValue.put(field.name, inputValue.get(field.name))
       }
