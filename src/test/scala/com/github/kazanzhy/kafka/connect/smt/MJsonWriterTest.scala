@@ -11,53 +11,55 @@ import java.math.{BigDecimal => JUBigDecimal}
 import scala.jdk.CollectionConverters.{MapHasAsJava, SeqHasAsJava}
 
 
-class Connect2JsonConverterTest extends AnyFunSuite {
+class MJsonWriterTest extends AnyFunSuite {
+  private val writer = new MJsonWriter
+
   test("Converts null value") {
-    assert(Connect2JsonConverter.convert(null, Schema.OPTIONAL_BOOLEAN_SCHEMA) == Json.nil)
+    assert(writer.convert(null, Schema.OPTIONAL_BOOLEAN_SCHEMA) == Json.nil)
   }
 
   test("Converts boolean value") {
-    assert(Connect2JsonConverter.convert(true, Schema.BOOLEAN_SCHEMA) == Json.make(true))
+    assert(writer.convert(true, Schema.BOOLEAN_SCHEMA) == Json.make(true))
   }
 
   test("Converts int8 value") {
-    assert(Connect2JsonConverter.convert(42.toByte, Schema.INT8_SCHEMA) == Json.make(42))
+    assert(writer.convert(42.toByte, Schema.INT8_SCHEMA) == Json.make(42))
   }
 
   test("Converts int16 value") {
-    assert(Connect2JsonConverter.convert(42.toShort, Schema.INT16_SCHEMA) == Json.make(42))
+    assert(writer.convert(42.toShort, Schema.INT16_SCHEMA) == Json.make(42))
   }
 
   test("Converts int32 value") {
-    assert(Connect2JsonConverter.convert(42, Schema.INT32_SCHEMA) == Json.make(42))
+    assert(writer.convert(42, Schema.INT32_SCHEMA) == Json.make(42))
   }
 
   test("Converts int64 value") {
-    assert(Connect2JsonConverter.convert(42L, Schema.INT64_SCHEMA) == Json.make(42))
+    assert(writer.convert(42L, Schema.INT64_SCHEMA) == Json.make(42))
   }
 
   test("Converts float32 value") {
-    assert(Connect2JsonConverter.convert(3.14f, Schema.FLOAT32_SCHEMA) == Json.make(3.14f))
+    assert(writer.convert(3.14f, Schema.FLOAT32_SCHEMA) == Json.make(3.14f))
   }
 
   test("Converts float64 value") {
-    assert(Connect2JsonConverter.convert(3.14d, Schema.FLOAT64_SCHEMA) == Json.make(3.14))
+    assert(writer.convert(3.14d, Schema.FLOAT64_SCHEMA) == Json.make(3.14))
   }
 
   test("Converts string value") {
-    assert(Connect2JsonConverter.convert("foobar", Schema.STRING_SCHEMA) == Json.make("foobar"))
+    assert(writer.convert("foobar", Schema.STRING_SCHEMA) == Json.make("foobar"))
   }
 
   test("Converts ByteBuffer to Base64-encoded string") {
-    assert(Connect2JsonConverter.convert(ByteBuffer.wrap(Array(4.toByte, 2.toByte)), Schema.BYTES_SCHEMA) == Json.make("BAI="))
+    assert(writer.convert(ByteBuffer.wrap(Array(4.toByte, 2.toByte)), Schema.BYTES_SCHEMA) == Json.make("BAI="))
   }
 
   test("Converts byte array to Base64-encoded string") {
-    assert(Connect2JsonConverter.convert(Array(4.toByte, 2.toByte), Schema.BYTES_SCHEMA) == Json.make("BAI="))
+    assert(writer.convert(Array(4.toByte, 2.toByte), Schema.BYTES_SCHEMA) == Json.make("BAI="))
   }
 
   test("Throws exception for unknown bytes type") {
-    val caught = intercept[DataException](Connect2JsonConverter.convert("test".getBytes.toList, Schema.BYTES_SCHEMA))
+    val caught = intercept[DataException](writer.convert("test".getBytes.toList, Schema.BYTES_SCHEMA))
     assert(caught.getCause.getMessage == "error: bytes field conversion failed to due unexpected object type scala.collection.immutable.$colon$colon")
   }
 
@@ -84,7 +86,7 @@ class Connect2JsonConverterTest extends AnyFunSuite {
       .put("string", "TestString")
 
     assert(
-      Connect2JsonConverter.convert(struct, schema) ==
+      writer.convert(struct, schema) ==
         Json.`object`()
           .set("boolean", true)
           .set("int8", 8)
@@ -100,13 +102,13 @@ class Connect2JsonConverterTest extends AnyFunSuite {
   test("Converts array to JSON array") {
     val schema = SchemaBuilder.array(Schema.STRING_SCHEMA).build
 
-    assert(Connect2JsonConverter.convert(List("foo", "bar").asJava, schema) == Json.array("foo", "bar"))
+    assert(writer.convert(List("foo", "bar").asJava, schema) == Json.array("foo", "bar"))
   }
 
   test("Converts map to JSON object") {
     val schema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).build
 
-    assert(Connect2JsonConverter.convert(Map("foo" -> "bar", "baz" -> "bat").asJava, schema) == Json.`object`().set("foo", "bar").set("baz", "bat"))
+    assert(writer.convert(Map("foo" -> "bar", "baz" -> "bat").asJava, schema) == Json.`object`().set("foo", "bar").set("baz", "bat"))
   }
 
   test("Converts complex nested structure") {
@@ -140,7 +142,7 @@ class Connect2JsonConverterTest extends AnyFunSuite {
       )
 
     assert(
-      Connect2JsonConverter.convert(struct, schema) ==
+      writer.convert(struct, schema) ==
         Json.`object`()
           .set("string", "foobar")
           .set(
@@ -159,23 +161,23 @@ class Connect2JsonConverterTest extends AnyFunSuite {
   }
 
   test("Converts logical date to ISO date string") {
-    assert(Connect2JsonConverter.convert(new JUDate(1661126400000L), Date.SCHEMA) == Json.make("2022-08-22"))
+    assert(writer.convert(new JUDate(1661126400000L), Date.SCHEMA) == Json.make("2022-08-22"))
   }
 
   test("Converts logical time to ISO time string") {
-    assert(Connect2JsonConverter.convert(new JUDate(11655000L), Time.SCHEMA) == Json.make("03:14:15"))
+    assert(writer.convert(new JUDate(11655000L), Time.SCHEMA) == Json.make("03:14:15"))
   }
 
   test("Converts logical timestamp to ISO timestamp") {
-    assert(Connect2JsonConverter.convert(new JUDate(1661138055000L), Timestamp.SCHEMA) == Json.make("2022-08-22T03:14:15Z"))
+    assert(writer.convert(new JUDate(1661138055000L), Timestamp.SCHEMA) == Json.make("2022-08-22T03:14:15Z"))
   }
 
   test("Converts logical decimal to JSON number") {
-    assert(Connect2JsonConverter.convert(new JUBigDecimal("4.2"), Decimal.schema(2)) == Json.make(JUBigDecimal.valueOf(420, 2)))
+    assert(writer.convert(new JUBigDecimal("4.2"), Decimal.schema(2)) == Json.make(JUBigDecimal.valueOf(420, 2)))
   }
 
   test("Wraps unexpected exception") {
-    val caught = intercept[DataException](Connect2JsonConverter.convert("test", Schema.BOOLEAN_SCHEMA))
+    val caught = intercept[DataException](writer.convert("test", Schema.BOOLEAN_SCHEMA))
     assert(caught.getMessage == "error while processing BOOLEAN value")
   }
 }
