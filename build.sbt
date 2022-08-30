@@ -13,9 +13,9 @@ resolvers += "confluent" at "https://packages.confluent.io/maven/"
 
 libraryDependencies ++= Seq(
   "org.apache.kafka" % "connect-transforms" % "3.2.1" % Provided,
-  "org.slf4j" % "slf4j-api" % "1.7.36",
+  "org.slf4j" % "slf4j-api" % "2.0.0",
   "at.grahsl.kafka.connect" % "kafka-connect-mongodb" % "1.4.0",
-  "org.mongodb" % "bson" % "4.6.0",
+  "org.mongodb" % "bson" % "4.7.1",
   "org.sharegov" % "mjson" % "1.4.1",
   "org.scalatest" %% "scalatest" % "3.2.12" % Test,
 )
