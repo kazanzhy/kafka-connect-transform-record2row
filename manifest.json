@@ -1,6 +1,6 @@
 {
   "name" : "kafka-connect-transform-record2row",
-  "version" : "0.1.0",
+  "version" : "0.2.0",
   "title" : "Record to Row Transformation",
   "description" : "Kafka Connect single message transform (SMT) converting a not primitive fields into a JSON string fields.",
   "owner" : {
