@@ -40,7 +40,7 @@ jobs:
                 cp LICENSE target/kafka-connect-transform-record2row/doc/
                 cp manifest.json target/kafka-connect-transform-record2row/
                 cd target
-                zip -r kafka-connect-transform-record2row{.zip,}
+                zip -r $(ls -d kazanzhy-kafka-connect-transform-record2row-*){.zip,}
             - name: Create Release
               uses: actions/create-release@latest
               id: create_release
